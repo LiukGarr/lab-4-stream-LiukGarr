@@ -168,12 +168,7 @@ class Network(object):
 
     def nodes(self):
         return self._nodes
-
-    @property
-    def lines(self):
-        return self._lines
-
-    def draw(self):
+    def weighted_paths(self):
         path_separ = "->"
         tabel = []
         column_list = ["path", "total latency", "total noise", "SNR [dB]"]
@@ -193,7 +188,11 @@ class Network(object):
                         tabel.append(row_list)
         df = pd.DataFrame(tabel, columns=column_list)
         print('Dataframe of all possible paths between all possible nodes: \n', df)
+    @property
+    def lines(self):
+        return self._lines
 
+    def draw(self):
         for id_node in self._nodes:
             x0 = self._nodes[id_node].position[0]
             y0 = self._nodes[id_node].position[1]
