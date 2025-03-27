@@ -168,6 +168,7 @@ class Network(object):
 
     def nodes(self):
         return self._nodes
+
     def weighted_paths(self):
         path_separ = "->"
         tabel = []
@@ -188,11 +189,39 @@ class Network(object):
                         tabel.append(row_list)
         df = pd.DataFrame(tabel, columns=column_list)
         print('Dataframe of all possible paths between all possible nodes: \n', df)
+        pass
+
+    def find_best_snr(self, lab_nod1, lab_nod2):
+        best_snr = 0.0
+        for path in self.find_paths(lab_nod1, lab_nod2):
+            sign_info = Signal_information(1e-3, 0.0, 0.0, path)
+            self.propagate(sign_info, path)
+            snr_evaluated = snr(sign_info.signal_power, sign_info.noise_power)
+            #print(f"{path} \t {round(snr_evaluated, 3)}dB")
+            if float(best_snr) < float(snr_evaluated):
+                best_path = path
+                best_snr = round(snr_evaluated, 3)
+
+        return best_path, best_snr
+
+    def find_best_latency(self, lab_nod1, lab_nod2):
+        best_lat = 1
+        for path in self.find_paths(lab_nod1, lab_nod2):
+            sign_info = Signal_information(1e-3, 0.0, 0.0, path)
+            self.propagate(sign_info, path)
+            #print(f"{path} \t {'{:.3e}'.format(sign_info.latency)}s")
+            if float(sign_info.latency) < float(best_lat):
+                best_path = path
+                best_lat = "{:.3e}".format(sign_info.latency)
+        return best_path, best_lat
+
     @property
     def lines(self):
         return self._lines
 
     def draw(self):
+        self.weighted_paths()
+
         for id_node in self._nodes:
             x0 = self._nodes[id_node].position[0]
             y0 = self._nodes[id_node].position[1]

@@ -13,9 +13,13 @@ file_input = INPUT_FOLDER / 'nodes.json'
 f = open(file_input, 'r')
 data = json.load(f)
 net = Network(data)
-node1 = 'E'
-node2 = 'B'
+node1 = 'B'
+node2 = 'A'
 print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
+best_path, best_snr = net.find_best_snr(node1, node2)
+print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")
+best_path, best_lat = net.find_best_latency(node1, node2)
+print(f"Best path between {node1} and {node2}, is {best_path} with latency= {best_lat}s")
 draw = Network(data).draw() # return the dataframe and the draw
 
 
