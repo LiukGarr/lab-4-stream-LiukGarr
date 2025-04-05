@@ -1,4 +1,6 @@
 import json
+import random
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,21 +14,40 @@ INPUT_FOLDER = ROOT / 'resources'
 file_input = INPUT_FOLDER / 'nodes.json'
 f = open(file_input, 'r')
 data = json.load(f)
+nodi = []
+results = "Latency"
+vect_res = []
+for nds in data:
+    nodi.append(nds)
 net = Network(data)
-node1 = 'B'
-node2 = 'A'
-print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
-best_path, best_snr = net.find_best_snr(node1, node2)
-print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")
-best_path, best_lat = net.find_best_latency(node1, node2)
-print(f"Best path between {node1} and {node2}, is {best_path} with latency= {best_lat}s")
+num_con = 100
+# node1 = 'A'
+# node2 = 'A'
+# print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
 draw = Network(data).draw() # return the dataframe and the draw
+i = 1
+# print(f"Nodi: {nodi}")
+while i <= num_con:
+    node1 = random.choice(nodi)
+    node2 = random.choice(nodi)
+    dato = net.stream(node1, node2, results)
+    if dato != "NONE":
+        vect_res.append(dato)
+    #print(f"{i}: {node1} {node2}")
+    i += 1
+#fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
 
-
-
-
-
-
+plt.xlabel(results)
+plt.ylabel('Iterations')
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+plt.hist(vect_res, bins=i)
+plt.title(results + ' Distribution', fontsize=16)
+plt.grid()
+plt.show()
+# best_path, best_snr = net.find_best_snr(node1, node2)
+# print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")
+# best_path, best_lat = net.find_best_latency(node1, node2)
+# print(f"Best path between {node1} and {node2}, is {best_path} with latency= {best_lat}s")
 
 
 f.close()
