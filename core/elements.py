@@ -108,6 +108,7 @@ class Line(object):
         self._nextlines = []
         self._arr_1 = []
         self._arr_2 = []
+        self.occupied_lines = []
         self._lab_line = lab_line
         self._arr_1 = pos1
         self._arr_2 = pos2
@@ -116,15 +117,20 @@ class Line(object):
         diff_x = pow((float(self._arr_2[0]) - float(self._arr_1[0])), 2)
         diff_y = pow((float(self._arr_2[1]) - float(self._arr_1[1])), 2)
         self._length = math.sqrt(diff_x + diff_y)
-        if state == 1:
-            #print(f"Occupied lines: {len(occupied)}")
-            if len(occupied) != 0:
-                for line in occupied:
-                    if lab_line != line[0]+line[1] and lab_line != line[1]+line[0]:
-                        occupied.append(lab_line)
-            else:
+        if self.state == 1:
+            i = True
+            # print(f"Starting occupation: {len(occupied)}")
+            if len(occupied) == 0:
                 occupied.append(lab_line)
-        #print(f"Occupied lines: {occupied}")
+                occupied.append(lab_line[1]+lab_line[0])
+            else:
+                for occ_lines in occupied:
+                    if lab_line == occ_lines:
+                        i = False
+                if i:
+                    occupied.append(lab_line)
+                    occupied.append(lab_line[1] + lab_line[0])
+            # print(f"Occupied lines: {occupied}")
         # print(diff_x, diff_y)
         pass
 
@@ -157,13 +163,16 @@ class Line(object):
     def propagate(self):
         pass
 
+    def line_occupied(self):
+        self.occupied_lines = occupied
+        return self.occupied_lines
+
 class Network(object):
     def __init__(self, data):
         self.line_occ = []
         self.path_founded=[]
         self._nodes = {}
-        nodi = []
-        lst_linee = []
+        self.line_occ = []
         self._lines = {}
         self._node2line = {}
         self._line2node = {}
@@ -215,7 +224,7 @@ class Network(object):
         best_snr = 0.0
         for path in paths:
             sign_info = Signal_information(0.0, 0.0, path)
-            self.propagate(sign_info, path,0)
+            self.propagate(sign_info, path, 0)
             snr_evaluated = snr(sign_info.signal_power, sign_info.noise_power)
             #print(f"{path} \t {round(snr_evaluated, 3)}dB")
             if float(best_snr) < float(snr_evaluated):
@@ -239,24 +248,31 @@ class Network(object):
 
     def stream(self, node1, node2, label):
         paths = self.find_paths(node1, node2)
-        if len(paths) != 0:
-            for found_path in self.path_founded:
-                #print(f"Chosen path: {found_path}")
-                for path in paths:
-                    if (found_path[0]+found_path[1] == path[0]+path[1]) or (found_path[0]+found_path[1] == path[1]+path[0]):
-                        path_ind = paths.index(path)
-                        #print(f"Elements deleted: {path} at index {path_ind}")
-                        paths.pop(path_ind)
+        paths_tmp = paths
+        # print(f"All possible paths: {paths}")
+        # print(f"Chosen path: {paths}")
+        if len(self.line_occ) != 0:
+            if len(paths) != 0:
+                for lines in self.line_occ:
+                    for path in paths_tmp:
+                        for x in range(len(path)-1):
+                            if lines == path[x]+path[x+1]:
+                                path_ind = paths.index(path)
+                                #print(f"Elements deleted: {path} at index {path_ind}")
+                                paths_tmp.pop(path_ind)
+                # print(f"Reduced path: {paths_tmp}")
         #print(f"Paths remains: {paths}")
-        sign_info = Signal_information(0.0, 0.0, paths)
+        sign_info = Signal_information(0.0, 0.0, paths_tmp)
         if label == "Latency":
             if len(paths) == 0:
                 best_lat, best_path = self.find_best_latency("NF")
                 Connection(node1, node2, sign_info.signal_power, best_lat, "NONE", best_path)
                 dato = "NONE"
             else:
-                best_lat, best_path = self.find_best_latency(paths)
-                self.path_founded.append(best_path)
+                best_lat, best_path = self.find_best_latency(paths_tmp)
+                # print(f"Best streaming path: {best_path}")
+                # self.path_founded.append(best_path)
+                # print(f"Chosen path: {self.path_founded}")
                 #print(f"Best Latency: {best_lat}s; Best path: {best_path}")
                 self.propagate(sign_info, best_path, 1)
                 Connection(node1, node2, sign_info.signal_power, "{:.3e}".format(best_lat), "NONE", best_path)
@@ -393,7 +409,12 @@ class Network(object):
         #print(path)
         for x in range(len(path)-1):
             line = path[x]+path[x+1]
-            lin_length = Line(line, self._nodes[path[x]].position, self._nodes[path[x+1]].position, state)
+            if state == 1:
+                # print(f"Lines in best path: {line}")
+                lin_length = Line(line, self._nodes[path[x]].position, self._nodes[path[x+1]].position, state)
+                self.line_occ = lin_length.line_occupied()
+            else:
+                lin_length = Line(line, self._nodes[path[x]].position, self._nodes[path[x + 1]].position, state)
             noise = lin_length.noise_generation(signal_information.signal_power, lin_length.length)
             latency = lin_length.latency_generation(lin_length.length)
             #print(f"Partial results: Length: {'{:.3e}'.format(lin_length.length)}, noise: {'{:.3e}'.format(noise)}, latency: {'{:.3e}'.format(latency)}")
