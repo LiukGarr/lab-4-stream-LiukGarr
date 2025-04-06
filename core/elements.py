@@ -61,13 +61,16 @@ class Signal_information(object):
 
 
 class Connection(object):
-    def __init__(self, node1, node2, sign_pow, lat, sig_noise_rate, path):
+    def __init__(self, node1, node2, sign_pow, lat, sig_noise_rate, path, label):
         self.input = node1
         self.output = node2
         self.signal_power = sign_pow
         self.latency = lat
         self.snr = sig_noise_rate
-        print(f"Input node {self.input}, Output node {self.output}; Chosen path {path}")
+        # if label == "Latency":
+             # print(f"Input node {self.input}, Output node {self.output}; {label}= {self.latency} s")
+        # else:
+            # print(f"Input node {self.input}, Output node {self.output}; {label}= {self.snr} dB")
         pass
 
 
@@ -223,7 +226,7 @@ class Network(object):
     def find_best_snr(self, paths):
         best_snr = 0.0
         if paths == "NF":
-            best_snr = "NONE"
+            best_snr = 0
             best_path = "NONE"
         else:
             for path in paths:
@@ -239,7 +242,7 @@ class Network(object):
     def find_best_latency(self, paths):
         best_lat = 1
         if paths == "NF":
-            best_lat = "NONE"
+            best_lat = "None"
             best_path = "NONE"
         else:
             for path in paths:
@@ -271,22 +274,22 @@ class Network(object):
         if label == "Latency":
             if len(paths) == 0:
                 best_lat, best_path = self.find_best_latency("NF")
-                Connection(node1, node2, sign_info.signal_power, best_lat, "NONE", best_path)
-                dato = "NONE"
+                Connection(node1, node2, sign_info.signal_power, best_lat, "NONE", best_path, label)
+                dato = "None"
             else:
                 best_lat, best_path = self.find_best_latency(paths_tmp)
                 self.propagate(sign_info, best_path, 1)
-                Connection(node1, node2, sign_info.signal_power, "{:.3e}".format(best_lat), "NONE", best_path)
+                Connection(node1, node2, sign_info.signal_power, "{:.3e}".format(best_lat), "NONE", best_path, label)
                 dato = best_lat
         else:
             if len(paths) == 0:
                 best_snr, best_path = self.find_best_snr("NF")
-                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path)
-                dato = "NONE"
+                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path,label)
+                dato = 0
             else:
                 best_snr, best_path = self.find_best_snr(paths_tmp)
                 self.propagate(sign_info, best_path, 1)
-                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path)
+                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path, label)
                 dato = best_snr
 
         return dato
@@ -307,13 +310,14 @@ class Network(object):
                 y1 = self._nodes[con_node].position[1]
                 plt.plot([x0, x1], [y0, y1], 'r')
 
+        plt.figure(1)
         plt.title('Network')
         plt.xlabel('X[m]')
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
         plt.ylabel('Y[m]')
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
         plt.grid()
-        plt.show()
+        # plt.show()
 
     # find_paths: given two node labels, returns all paths that connect the 2 nodes
     # as a list of node labels. Admissible path only if cross any node at most once
