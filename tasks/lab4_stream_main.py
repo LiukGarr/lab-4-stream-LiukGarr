@@ -15,7 +15,6 @@ file_input = INPUT_FOLDER / 'nodes.json'
 f = open(file_input, 'r')
 data = json.load(f)
 nodi = []
-results = "Latency"
 vect_res = []
 for nds in data:
     nodi.append(nds)
@@ -27,15 +26,14 @@ num_con = 100
 draw = Network(data).draw() # return the dataframe and the draw
 i = 1
 # print(f"Nodi: {nodi}")
+results = "SNR"
 while i <= num_con:
     node1 = random.choice(nodi)
     node2 = random.choice(nodi)
     dato = net.stream(node1, node2, results)
     if dato != "NONE":
         vect_res.append(dato)
-    #print(f"{i}: {node1} {node2}")
     i += 1
-#fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
 
 plt.xlabel(results)
 plt.ylabel('Iterations')

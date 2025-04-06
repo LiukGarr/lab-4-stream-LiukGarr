@@ -220,16 +220,21 @@ class Network(object):
         print('Dataframe of all possible paths between all possible nodes: \n', df)
         pass
 
-    def find_best_snr(self, lab_nod1, lab_nod2, paths):
+    def find_best_snr(self, paths):
         best_snr = 0.0
-        for path in paths:
-            sign_info = Signal_information(0.0, 0.0, path)
-            self.propagate(sign_info, path, 0)
-            snr_evaluated = snr(sign_info.signal_power, sign_info.noise_power)
-            #print(f"{path} \t {round(snr_evaluated, 3)}dB")
-            if float(best_snr) < float(snr_evaluated):
-                best_snr = round(snr_evaluated, 3)
-        return best_snr
+        if paths == "NF":
+            best_snr = "NONE"
+            best_path = "NONE"
+        else:
+            for path in paths:
+                sign_info = Signal_information(0.0, 0.0, path)
+                self.propagate(sign_info, path, 0)
+                snr_evaluated = snr(sign_info.signal_power, sign_info.noise_power)
+                #print(f"{path} \t {round(snr_evaluated, 3)}dB")
+                if float(best_snr) < float(snr_evaluated):
+                    best_path = path
+                    best_snr = round(snr_evaluated, 3)
+        return best_snr, best_path
 
     def find_best_latency(self, paths):
         best_lat = 1
@@ -270,17 +275,19 @@ class Network(object):
                 dato = "NONE"
             else:
                 best_lat, best_path = self.find_best_latency(paths_tmp)
-                # print(f"Best streaming path: {best_path}")
-                # self.path_founded.append(best_path)
-                # print(f"Chosen path: {self.path_founded}")
-                #print(f"Best Latency: {best_lat}s; Best path: {best_path}")
                 self.propagate(sign_info, best_path, 1)
                 Connection(node1, node2, sign_info.signal_power, "{:.3e}".format(best_lat), "NONE", best_path)
                 dato = best_lat
         else:
-            best_snr = self.find_best_snr(node1, node2, paths)
-            Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, paths)
-            dato = best_snr
+            if len(paths) == 0:
+                best_snr, best_path = self.find_best_snr("NF")
+                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path)
+                dato = "NONE"
+            else:
+                best_snr, best_path = self.find_best_snr(paths_tmp)
+                self.propagate(sign_info, best_path, 1)
+                Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path)
+                dato = best_snr
 
         return dato
     @property
