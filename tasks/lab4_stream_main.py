@@ -29,6 +29,8 @@ results = "Latency"
 while i <= num_con:
     node1 = random.choice(nodi)
     node2 = random.choice(nodi)
+    if node2 == node1:
+        node2 = random.choice(nodi)
     dato = net.stream(node1, node2, results)
     if (dato != "None") and (dato != 0):
         vect_res.append(dato)
