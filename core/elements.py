@@ -181,6 +181,8 @@ class Network(object):
         self._node2line = {}
         self._line2node = {}
         self.path = []
+        self.lines_path = []
+        self.path_mod = []
         for nds in data:
             self._nodes[nds] = Node(nds, data[str(nds)]['position'], data[str(nds)]['connected_nodes'])
             # nodi.setdefault(nds, []).extend((self._nodes[nds].label, self._nodes[nds].connected_nodes, self._nodes[nds].position))
@@ -257,24 +259,42 @@ class Network(object):
 
     def stream(self, node1, node2, label):
         paths = self.find_paths(node1, node2)
-        paths_tmp = paths
-        # print(f"All possible paths: {paths}")
-        # print(f"Chosen path: {paths}")
-        if len(self.line_occ) != 0:
-            if len(paths) != 0:
-                for lines in self.line_occ:
-                    for path in paths_tmp:
-                        for x in range(len(path)-1):
-                            if lines == path[x]+path[x+1]:
-                                # print(f"Line occupied {lines} in {path}")
-                                path_ind = paths.index(path)
-                                #print(f"Elements deleted: {path} at index {path_ind}")
-                                paths_tmp.pop(path_ind)
-                # print(f"Reduced path: {paths_tmp}")
-        #print(f"Paths remains: {paths}")
+        paths_tmp = paths.copy()
+        #print(f"Total paths: {paths}")
+        #print(f"lines occupied: {self.line_occ}")
+        for lines in self.line_occ:
+            for path in paths:
+                for i in range(len(path)-1):
+                    lines_path = path[i]+path[i+1]
+                    self.lines_path.append(lines_path)
+                for line_path in self.lines_path:
+                    if lines == line_path:
+                        if len(self.path_mod) == 0:
+                            self.path_mod.append(path)
+                        else:
+                            i = True
+                            for mod in self.path_mod:
+                                if path == mod:
+                                    i = False
+                            if i:
+                                self.path_mod.append(path)
+                        # self.ind_2pop.append(paths.index(path))
+                        # print(f"{path}: Eliminated for {lines}")
+                        #path_ind = paths_tmp.index(path)
+                        #paths_tmp.pop(path_ind)
+                        # print(f"Paths: {paths}")
+                        # print(f"Paths mod: {paths_tmp}")
+                self.lines_path.clear()
+        for not_path in self.path_mod:
+            # print(f"{not_path}")
+            paths_tmp.remove(not_path)
+        # print(f"Paths to not use: {self.path_mod}")
+        # print(f"Paths remains: {paths_tmp}")
+        self.path_mod.clear()
+        # print(f"Paths remains: {paths}")
         sign_info = Signal_information(0.0, 0.0, paths_tmp)
         if label == "Latency":
-            if len(paths) == 0:
+            if len(paths_tmp) == 0:
                 best_lat, best_path = self.find_best_latency("NF")
                 Connection(node1, node2, sign_info.signal_power, best_lat, "NONE", best_path, label)
                 dato = "None"
@@ -282,13 +302,13 @@ class Network(object):
                 best_lat, best_path = self.find_best_latency(paths_tmp)
                 self.propagate(sign_info, best_path, 1)
                 Connection(node1, node2, sign_info.signal_power, "{:.3e}".format(best_lat), "NONE", best_path, label)
-                # print(f"Best path: {best_path}")
-                # print(f"Lines occupied: {self.line_occ}")
-                # print(f"All possible paths: {self.find_paths(node1, node2)}")
-                # print(f"Reduced path: {paths_tmp}")
+                print(f"Best path: {best_path}")
+                #print(f"Lines occupied: {self.line_occ}")
+                #print(f"All possible paths: {self.find_paths(node1, node2)}")
+                #print(f"Reduced path: {paths_tmp}")
                 dato = best_lat
         else:
-            if len(paths) == 0:
+            if len(paths_tmp) == 0:
                 best_snr, best_path = self.find_best_snr("NF")
                 Connection(node1, node2, sign_info.signal_power, "NONE", best_snr, best_path,label)
                 dato = 0
