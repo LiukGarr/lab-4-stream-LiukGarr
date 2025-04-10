@@ -19,7 +19,7 @@ vect_res = []
 for nds in data:
     nodi.append(nds)
 net = Network(data)
-num_con = 20
+num_con = 100
 # node1 = 'A'
 # node2 = 'A'
 # print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
@@ -44,15 +44,7 @@ if results == "Latency":
 plt.hist(vect_res, bins=i)
 plt.title(results + ' Distribution', fontsize=16)
 plt.grid()
-#plt.show()
-
-inp =True
-while inp:
-    qst = str(input())
-    if qst == ".":
-        inp = False
-    else:
-        print(f"{len(qst)}")
+plt.show()
 
 # best_path, best_snr = net.find_best_snr(node1, node2)
 # print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")
