@@ -211,17 +211,19 @@ class Network(object):
         path_separ = "->"
         tabel = []
         column_list = ["path", "total latency", "total noise", "SNR [dB]"]
+        # sign_info = Signal_information(0.0, 0.0, path)
         for id_node1 in self._nodes:
             for id_node2 in self._nodes:
                 if id_node1 != id_node2:
                     for path in self.find_paths(id_node1, id_node2):
                         sign_info = Signal_information(0.0, 0.0, path)
-                        self.propagate(sign_info, path, 0)
+                        upd_lat, upd_noise = self.upgrade_lat_snr(path, sign_info)
+                        # self.propagate(sign_info, path, 0)
                         # self.probe(sign_info)
-                        snr_evaluated = round(snr(sign_info.noise_power), 3)
-                        latency_eng = "{:.3e}".format(sign_info.latency)
-                        noisepow_eng = "{:.3e}".format(sign_info.noise_power)
-                        row_list = [path_separ.join(path), latency_eng, noisepow_eng,
+                        snr_evaluated = round(snr(upd_noise), 3)
+                        latency_eng = "{:.3e}".format(upd_lat)
+                        noise_pow_eng = "{:.3e}".format(upd_noise)
+                        row_list = [path_separ.join(path), latency_eng, noise_pow_eng,
                                     snr_evaluated]
                         tabel.append(row_list)
         df = pd.DataFrame(tabel, columns=column_list)
