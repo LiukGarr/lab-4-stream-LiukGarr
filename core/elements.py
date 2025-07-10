@@ -122,7 +122,7 @@ class Line(object):
         diff_x = pow((float(self._arr_2[0]) - float(self._arr_1[0])), 2)
         diff_y = pow((float(self._arr_2[1]) - float(self._arr_1[1])), 2)
         self._length = math.sqrt(diff_x + diff_y)
-        if self.state == 1:
+        if self.state == 0:
             i = True
             # print(f"Starting occupation: {len(occupied)}")
             if len(occupied) == 0:
@@ -196,9 +196,9 @@ class Network(object):
                 # pos1 = self._nodes[nds].position
                 # pos2 = self._nodes[con_nds].position
                 # print(f"{nds}: {pos1} {con_nds}:{pos2}")
-                self._lines[line] = Line(line, self._nodes[nds].position, self._nodes[con_nds].position, 0)
+                self._lines[line] = Line(line, self._nodes[nds].position, self._nodes[con_nds].position, 1)
                 # print(f"Nodo 1: {self._nodes[nds].label}, Nodo 2: {self._nodes[con_nds].label}")
-                print(f"La distanza {self._lines[line].label} è {self._lines[line].length} meters'")
+                # print(f"La distanza {self._lines[line].label} è {self._lines[line].length} meters'")
         # print(nodi, "\n", linee)
         self.connect()
         #self._weighted_paths = pd.DataFrame(tabel, columns=column_list)
@@ -256,11 +256,11 @@ class Network(object):
                 # print(f"total noise:{sign_info.noise_power}")
             best_noise = min(list_noise)
             best_snr = round(snr(best_noise), 3)
-            print(f"{best_snr}")
+            # print(f"{best_snr}")
             pos_best_noise = list_noise.index(best_noise)
             best_path = paths[pos_best_noise]
             best_lat = '{:.3e}'.format(list_lat[pos_best_noise])
-            # print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
+            print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
         return best_lat, best_path, best_snr
 
     def find_best_latency(self, paths, sign_info):
@@ -280,7 +280,7 @@ class Network(object):
             best_lat = '{:.3e}'.format(min(list_lat))
             best_path = paths[pos_best_lat]
             best_snr = round(snr(list_noise[pos_best_lat]), 3)
-            # print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
+            print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
         return best_lat, best_path, best_snr
 
     def stream(self, node1, node2, label):
@@ -314,19 +314,19 @@ class Network(object):
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_latency(paths_tmp, sign_info)
-                print(f"For Lat: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
-                self.propagate(sign_info, best_path, 1)
+                # print(f"For Lat: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
+                self.propagate(sign_info, best_path, 0)
                 Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
                 dato = [best_lat, best_snr]
         else:
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_snr("NF", sign_info)
-                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path,label)
+                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_snr(paths_tmp, sign_info)
-                print(f"For SNR: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
-                self.propagate(sign_info, best_path, 1)
+                # print(f"For SNR: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
+                self.propagate(sign_info, best_path, 0)
                 Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
                 dato = [best_lat, best_snr]
         return dato
@@ -457,17 +457,17 @@ class Network(object):
         #print(path)
         for x in range(len(path)-1):
             line = path[x]+path[x+1]
-            if state == 1:
+            if state == 0:
                 # print(f"Lines in best path: {line}")
                 lin_length = Line(line, self._nodes[path[x]].position, self._nodes[path[x+1]].position, state)
                 self.line_occ = lin_length.line_occupied()
             else:
                 lin_length = Line(line, self._nodes[path[x]].position, self._nodes[path[x + 1]].position, state)
-            noise = lin_length.noise_generation() #, lin_length.length)
-            latency = lin_length.latency_generation()
+            # noise = lin_length.noise_generation() #, lin_length.length)
+            # latency = lin_length.latency_generation()
             #print(f"Partial results: Length: {'{:.3e}'.format(lin_length.length)}, noise: {'{:.3e}'.format(noise)}, latency: {'{:.3e}'.format(latency)}")
-            signal_information.update_noise_power(noise)
-            signal_information.update_latency(latency)
+            # signal_information.update_noise_power(noise)
+            # signal_information.update_latency(latency)
             #print(f"Line {line} --> line length: {'{:.3e}'.format(lin_length.length)}m noise_pow: {'{:.3e}'.format(signal_information.noise_power)}mW; latency: {'{:.3e}'.format(signal_information.latency)}s")
             #print(f"Nodo 1: {self._nodes[path[x]].label}, Nodo 2: {self._nodes[path[x+1]].label}")
             #print(f"Length between {self._lines[line].label} is {self._lines[line].length} meters and noise power is {signal_information.noise_power} ")
