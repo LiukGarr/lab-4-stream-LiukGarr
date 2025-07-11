@@ -27,18 +27,21 @@ num_con = 100
 # print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
 draw = Network(data).draw()  # return the dataframe and the draw
 i = 1
-results = "Latency"
+results = "SNR"
 while i <= num_con:
     node1 = random.choice(nodi)
     node2 = random.choice(nodi)
     if node2 == node1:
         node2 = random.choice(nodi)
+    print(f"Nodes: {node1} + {node2}")
     dato_lat, dato_SNR = net.stream(node1, node2, results)
     if dato_lat != 0:
         vect_res_lat.append(float(dato_lat))
     if dato_SNR != "None":
         vect_res_SNR.append(dato_SNR)
     i += 1
+
+print(f"# of paths found: {len(vect_res_lat)}")
 
 fig, axs = plt.subplots(1, 2)
 fig.suptitle(f'Latency and SNR for best {results}')

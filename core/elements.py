@@ -3,7 +3,7 @@ import pandas as pd
 import math
 from core.parameters import c
 from core.math_utils import snr
-from decimal import Decimal
+# from decimal import Decimal
 import matplotlib.pyplot as plt
 
 occupied = []
@@ -61,12 +61,12 @@ class Signal_information(object):
 
 
 class Connection(object):
-    def __init__(self, node1, node2, sign_pow, lat, sig_noise_rate, path, label):
-        self.input = node1
-        self.output = node2
-        self.signal_power = sign_pow
-        self.latency = lat
-        self.snr = sig_noise_rate
+    def __init__(self, node1, node2, sign_pow):
+        self._input = node1
+        self._output = node2
+        self._signal_power = sign_pow
+        self._latency = 0.0
+        self._snr = 0.0
         # if label == "Latency":
             # if self.latency != "None":
                 # print(f"Input {self.input}, Output {self.output}; {label}= {self.latency}s and SNR={self.snr}dB")
@@ -74,6 +74,17 @@ class Connection(object):
             # if self.snr != 0:
                 # print(f"Input {self.input}, Output {self.output}; {label}= {self.snr}dB and Latency= {self.latency}s")
         pass
+
+    def conn_update(self, new_latency, new_snr):
+        self._latency = new_latency
+        self._snr = new_snr
+        pass
+
+    def conn_lat(self):
+        return self._latency
+
+    def conn_snr(self):
+        return self._snr
 
 
 class Node(object):
@@ -281,9 +292,11 @@ class Network(object):
             best_path = paths[pos_best_lat]
             best_snr = round(snr(list_noise[pos_best_lat]), 3)
             print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
+            print(f"list of lat.es:\n{list_lat}")
         return best_lat, best_path, best_snr
 
     def stream(self, node1, node2, label):
+        path_conn = Connection(node1, node2, Signal_information.signal_power)
         paths = self.find_paths(node1, node2)
         paths_tmp = paths.copy()
         for lines in self.line_occ:
@@ -306,28 +319,26 @@ class Network(object):
         for not_path in self.path_mod:
             paths_tmp.remove(not_path)
         self.path_mod.clear()
-        sign_info = Signal_information(0.0, 0.0, paths_tmp)
+        sign_info = Signal_information(path_conn.conn_lat(), path_conn.conn_snr(), paths_tmp)
         if label == "Latency":
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_latency("NF", sign_info)
-                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
+                path_conn.conn_update(best_lat, best_snr)
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_latency(paths_tmp, sign_info)
-                # print(f"For Lat: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
-                self.propagate(sign_info, best_path, 0)
-                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
+                path_conn.conn_update(best_lat, best_snr)
+                self.propagate(best_path, 0)
                 dato = [best_lat, best_snr]
         else:
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_snr("NF", sign_info)
-                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
+                path_conn.conn_update(best_lat, best_snr)
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_snr(paths_tmp, sign_info)
-                # print(f"For SNR: {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
-                self.propagate(sign_info, best_path, 0)
-                Connection(node1, node2, sign_info.signal_power, best_lat, best_snr, best_path, label)
+                path_conn.conn_update(best_lat, best_snr)
+                self.propagate(best_path, 0)
                 dato = [best_lat, best_snr]
         return dato
     @property
@@ -452,7 +463,7 @@ class Network(object):
 
     # propagate signal_information through path specified in it
     # and returns the modified spectral information
-    def propagate(self, signal_information, path, state):
+    def propagate(self, path, state):
         #self._lines[line] = Line(line, self._nodes[nds].position, self._nodes[con_nds].position)
         #print(path)
         for x in range(len(path)-1):
