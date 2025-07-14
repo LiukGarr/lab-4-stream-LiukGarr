@@ -31,9 +31,9 @@ results = "SNR"
 while i <= num_con:
     node1 = random.choice(nodi)
     node2 = random.choice(nodi)
-    if node2 == node1:
+    while node2 == node1:
         node2 = random.choice(nodi)
-    print(f"Nodes: {node1} + {node2}")
+    # print(f"Nodes: {node1} + {node2}")
     dato_lat, dato_SNR = net.stream(node1, node2, results)
     if dato_lat != 0:
         vect_res_lat.append(float(dato_lat))
