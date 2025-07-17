@@ -11,7 +11,7 @@ from core.elements import Signal_information
 # Exercise Lab3: Network
 ROOT = Path(__file__).parent.parent
 INPUT_FOLDER = ROOT / 'resources'
-file_input = INPUT_FOLDER / 'nodes.json'
+file_input = INPUT_FOLDER / 'network.json'
 f = open(file_input, 'r')
 data = json.load(f)
 nodi = []
