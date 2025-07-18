@@ -53,7 +53,7 @@ axs[1].hist(vect_res_SNR, bins=i)
 axs[1].set_title('SNR [dB]')
 axs[1].grid()
 
-plt.show()
+# plt.show()
 
 # best_path, best_snr = net.find_best_snr(node1, node2)
 # print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")

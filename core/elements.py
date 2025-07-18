@@ -67,18 +67,35 @@ class Connection(object):
         self._signal_power = sign_pow
         self._latency = 0.0
         self._snr = 0.0
-        # pass
+        pass
 
-    def conn_update(self, new_latency, new_snr):
-        self._latency = new_latency
-        self._snr = new_snr
-        # pass
+    @property
+    def input(self):
+        return self._input
 
-    def conn_lat(self):
+    @property
+    def output(self):
+        return self._output
+
+    @property
+    def signal_power(self):
+        return self._signal_power
+
+    @property
+    def latency(self):
         return self._latency
 
-    def conn_snr(self):
+    @latency.setter
+    def latency(self, conn_lat):
+        self._latency = conn_lat
+
+    @property
+    def snr(self):
         return self._snr
+
+    @snr.setter
+    def snr(self, conn_snr):
+        self._snr = conn_snr
 
 
 class Node(object):
@@ -300,23 +317,22 @@ class Network(object):
         if label == "Latency":
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_latency("NF")
-                path_conn.conn_update(best_lat, best_snr)
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_latency(paths_tmp)
-                path_conn.conn_update(best_lat, best_snr)
-                self.propagate(best_path, 0)
                 dato = [best_lat, best_snr]
         else:
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_snr("NF")
-                path_conn.conn_update(best_lat, best_snr)
                 dato = [0, "None"]
             else:
                 best_lat, best_path, best_snr = self.find_best_snr(paths_tmp)
-                path_conn.conn_update(best_lat, best_snr)
-                self.propagate(best_path, 0)
                 dato = [best_lat, best_snr]
+        if dato[1] != 0 and dato[0] != "None" and best_path != "None":
+            self.propagate(best_path, 0)
+            path_conn.latency = best_lat
+            path_conn.snr = best_snr
+            # print(self._sign_info[best_path].path, path_conn.input, path_conn.output, path_conn.latency, path_conn.snr)
         return dato
     @property
     def lines(self):
