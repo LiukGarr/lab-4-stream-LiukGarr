@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from core.elements import Network
 
-# Exercise Lab3: Network
+# Exercise Lab4: Stream
 ROOT = Path(__file__).parent.parent
 INPUT_FOLDER = ROOT / 'resources'
 file_input = INPUT_FOLDER / 'network.json'
