@@ -3,10 +3,8 @@ import random
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 from pathlib import Path
 from core.elements import Network
-from core.elements import Signal_information
 
 # Exercise Lab3: Network
 ROOT = Path(__file__).parent.parent
@@ -15,25 +13,20 @@ file_input = INPUT_FOLDER / 'network.json'
 f = open(file_input, 'r')
 data = json.load(f)
 nodi = []
-# vect_res = []
 vect_res_lat = []
 vect_res_SNR = []
 for nds in data:
     nodi.append(nds)
 net = Network(data)
 num_con = 100
-# node1 = 'A'
-# node2 = 'A'
-# print(f"Path between {node1} and {node2}: \n", net.find_paths(node1, node2))
 draw = Network(data).draw()  # return the dataframe and the draw
 i = 1
-results = "SNR"
+results = "Latency"
 while i <= num_con:
     node1 = random.choice(nodi)
     node2 = random.choice(nodi)
     while node2 == node1:
         node2 = random.choice(nodi)
-    # print(f"Nodes: {node1} + {node2}")
     dato_lat, dato_SNR = net.stream(node1, node2, results)
     if dato_lat != 0:
         vect_res_lat.append(float(dato_lat))
@@ -42,24 +35,23 @@ while i <= num_con:
     i += 1
 
 print(f"# of paths found: {len(vect_res_lat)}")
+print(f"For best {results}:\nAverage Lat.: {'{:.3e}'.format(np.average(vect_res_lat))}s, Average SNR: "
+      f"{round(np.average(vect_res_SNR), 3)}dB")
 
-fig, axs = plt.subplots(1, 2)
-fig.suptitle(f'Latency and SNR for best {results}')
-axs[0].hist(vect_res_lat, bins=i)
-axs[0].ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-axs[0].set_title('Latency [s]')
-axs[0].grid()
-axs[1].hist(vect_res_SNR, bins=i)
-axs[1].set_title('SNR [dB]')
-axs[1].grid()
+plt.figure(2)
+plt.hist(vect_res_lat, bins=i)
+plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+plt.title(f'Latency for best {results}')
+plt.xlabel("Latency [s]")
+plt.grid()
 
-# plt.show()
+plt.figure(3)
+plt.hist(vect_res_SNR, bins=i)
+plt.title(f'SNR for best {results}')
+plt.xlabel("SNR [dB]")
+plt.grid()
 
-# best_path, best_snr = net.find_best_snr(node1, node2)
-# print(f"Best path between {node1} and {node2}, is {best_path} with snr= {best_snr}dB")
-# best_path, best_lat = net.find_best_latency(node1, node2)
-# print(f"Best path between {node1} and {node2}, is {best_path} with latency= {best_lat}s")
-
+plt.show()
 
 f.close()
 # Load the Network from the JSON file, connect nodes and lines in Network.

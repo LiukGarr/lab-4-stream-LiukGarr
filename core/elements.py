@@ -1,9 +1,7 @@
-# import json
 import pandas as pd
 import math
 from core.parameters import c
 from core.math_utils import snr
-# from decimal import Decimal
 import matplotlib.pyplot as plt
 
 occupied = []
@@ -16,7 +14,6 @@ class Signal_information(object):
         self._noise_pow = sn
         self._latency = sl
         self._path = path
-        #pass
 
     @property
     def signal_power(self):
@@ -34,7 +31,7 @@ class Signal_information(object):
         self._noise_pow = np
 
     def update_noise_power(self, increment_np):
-        self._noise_pow = self._noise_pow + increment_np
+        self._noise_pow += increment_np
 
     @property
     def latency(self):
@@ -54,10 +51,6 @@ class Signal_information(object):
     @path.setter
     def path(self, selected_path):
         self._path = selected_path
-
-    def update_path(self):
-        tmp_list_path = [self._path[0][1:]]
-        self._path = tmp_list_path
 
 
 class Connection(object):
@@ -139,11 +132,11 @@ class Line(object):
         self._lab_line = lab_line
         self._arr_1 = pos1
         self._arr_2 = pos2
-        # print(float(self._arr_1[0]), float(self._arr_1[1]))
+
+        # Length calculation
         diff_x = pow((float(self._arr_2[0]) - float(self._arr_1[0])), 2)
         diff_y = pow((float(self._arr_2[1]) - float(self._arr_1[1])), 2)
         self._length = math.sqrt(diff_x + diff_y)
-        # pass
 
     @property
     def label(self):
@@ -168,36 +161,29 @@ class Line(object):
 
     def noise_generation(self, sig_pow):
         noise = 1e-9*self.length*sig_pow
-        #print(noise)
         return noise
 
     def propagate(self):
         pass
 
-    def line_occupied(self):
+    def line_occupied(self):    # Lines
         self.occupied_lines = occupied
         return self.occupied_lines
 
-    def line_state(self, state):
+    def line_state(self, state):    # Array of all the chosen lines
         if state == 0:
             i = True
-            # print(f"Starting occupation: {len(occupied)}")
             if len(occupied) == 0:
                 occupied.append(self._lab_line)
-                # occupied.append(lab_line[1]+lab_line[0])
             else:
                 for occ_lines in occupied:
                     if self._lab_line == occ_lines:
                         i = False
                 if i:
                     occupied.append(self._lab_line)
-        # pass
-        # print(diff_x, diff_y)
 
 class Network(object):
     def __init__(self, data):
-        self.line_occ = []
-        self.path_founded=[]
         self._nodes = {}
         self.line_occ = []
         self._lines = {}
@@ -207,17 +193,20 @@ class Network(object):
         self.lines_path = []
         self.path_mod = []
         self._sign_info = {}
+        # Nodes, position and connected nodes gathering
         for nds in data:
             self._nodes[nds] = Node(nds, data[str(nds)]['position'], data[str(nds)]['connected_nodes'])
+        # Lines definition
         for nds in self._nodes:
             for con_nds in self._nodes[nds].connected_nodes:
                 line = nds + con_nds
                 self._lines[line] = Line(line, self._nodes[nds].position, self._nodes[con_nds].position)
         self.connect()
+
+        # Data-frame construction
         tabel = []
         self._sign_info = {}
         column_list = ["path", "total latency", "total noise", "SNR [dB]"]
-        # sign_info = Signal_information(0.0, 0.0, path)
         for id_node1 in self._nodes:
             for id_node2 in self._nodes:
                 if id_node1 != id_node2:
@@ -232,6 +221,7 @@ class Network(object):
                         tabel.append(row_list)
         self._weighted_paths = pd.DataFrame(tabel, columns=column_list)
         print('Dataframe of all possible paths between all possible nodes: \n', self.weighted_paths())
+
     def nodes(self):
         return self._nodes
 
@@ -239,6 +229,7 @@ class Network(object):
         return self._weighted_paths
 
     def upgrade_lat_snr(self, path, sign_info):
+        # Latency and Noise calculation
         for x in range(len(path) - 1):
             to_check = path[x] + path[x + 1]
             noise = self._lines[to_check].noise_generation(sign_info.signal_power)
@@ -250,6 +241,7 @@ class Network(object):
         return upd_lat, upd_noise
 
     def find_best_snr(self, paths):
+        # Pathfinder for best-SNR method
         if paths == "NF":
             best_snr = 0
             best_path, best_lat = "None", "None"
@@ -257,13 +249,10 @@ class Network(object):
             list_noise = []
             list_lat = []
             for path in paths:
-                # print(self._sign_info[path].latency)
                 list_lat.append(self._sign_info[path].latency)
                 list_noise.append(self._sign_info[path].noise_power)
-                # print(f"total noise:{sign_info.noise_power}")
             best_noise = min(list_noise)
             best_snr = round(snr(best_noise), 3)
-            # print(f"{best_snr}")
             pos_best_noise = list_noise.index(best_noise)
             best_path = paths[pos_best_noise]
             best_lat = '{:.3e}'.format(list_lat[pos_best_noise])
@@ -271,11 +260,11 @@ class Network(object):
         return best_lat, best_path, best_snr
 
     def find_best_latency(self, paths):
+        # Pathfinder for best-latency method
         if paths == "NF":
             best_lat, best_path, best_snr = "None", "None", "None"
         else:
             list_noise = []
-            list_snr = []
             list_lat = []
             for path in paths:
                 list_lat.append(self._sign_info[path].latency)
@@ -285,14 +274,14 @@ class Network(object):
             best_lat = '{:.3e}'.format(min(list_lat))
             best_path = paths[pos_best_lat]
             best_snr = round(snr(list_noise[pos_best_lat]), 3)
-            # print(f"Best path {best_path}, SNR: {best_snr}, Lat.: {best_lat}")
-            # print(f"list of lat.es:\n{list_lat}")
         return best_lat, best_path, best_snr
 
-    def stream(self, node1, node2, label):
+    def stream(self, node1, node2, label):      # Research for a path to stream
         path_conn = Connection(node1, node2, Signal_information.signal_power)
         paths = self.find_paths(node1, node2)
         paths_tmp = paths.copy()
+
+        # Remove of paths due to occupation
         for lines in self.line_occ:
             for path in paths:
                 for i in range(len(path)-1):
@@ -313,7 +302,8 @@ class Network(object):
         for not_path in self.path_mod:
             paths_tmp.remove(not_path)
         self.path_mod.clear()
-        # sign_info = Signal_information(path_conn.conn_lat(), path_conn.conn_snr(), paths_tmp)
+
+        # Method to implement best: Latency or SNR
         if label == "Latency":
             if len(paths_tmp) == 0:
                 best_lat, best_path, best_snr = self.find_best_latency("NF")
@@ -328,17 +318,21 @@ class Network(object):
             else:
                 best_lat, best_path, best_snr = self.find_best_snr(paths_tmp)
                 dato = [best_lat, best_snr]
+
+        # Propagate the found path
         if dato[1] != 0 and dato[0] != "None" and best_path != "None":
             self.propagate(best_path, 0)
             path_conn.latency = best_lat
             path_conn.snr = best_snr
-            # print(self._sign_info[best_path].path, path_conn.input, path_conn.output, path_conn.latency, path_conn.snr)
         return dato
+
     @property
     def lines(self):
         return self._lines
 
     def draw(self):
+
+        # Network map and plot
         for id_node in self._nodes:
             x0 = self._nodes[id_node].position[0]
             y0 = self._nodes[id_node].position[1]
@@ -349,7 +343,6 @@ class Network(object):
                 x1 = self._nodes[con_node].position[0]
                 y1 = self._nodes[con_node].position[1]
                 plt.plot([x0, x1], [y0, y1], 'r')
-
         plt.figure(1)
         plt.title('Network')
         plt.xlabel('X[m]')
@@ -357,22 +350,19 @@ class Network(object):
         plt.ylabel('Y[m]')
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
         plt.grid()
-        # plt.show()
 
     # find_paths: given two node labels, returns all paths that connect the 2 nodes
     # as a list of node labels. Admissible path only if cross any node at most once
     def find_paths(self, label1, label2):
-        path = []
         paths = []
         visited = []
-        copy_n2l = {}
-        copy_l2n = {}
         first_node = label1
         last_node = label2
         b_stop = False
+
+        # Pathfinder method
         for nds in self._node2line:
             if nds == first_node:
-                # print(f"Le linee attaccate a {self._first_node} sono {self._node2line[nds]}")
                 b_stop = True
         if not b_stop:
             print("Invalid node")
@@ -416,17 +406,12 @@ class Network(object):
                                                                                  self._line2node[next_lns1][0] +
                                                                                  self._line2node[next_lns2][0] +
                                                                                  self._line2node[next_lns3][0])
-            #print(Signal_information(paths).path)
-            #print(f"Paths between {label1} and {label2}: \n", paths)
-            #self.propagate()
             return paths
-            #pass
 
     # connect function set the successive attributes of all NEs as dicts
     # each node must have dict of lines and viceversa
     def connect(self):
         self._node2line = {}
-        node2line = {}
         self._line2node = {}
         line2node = {}
         for nds in self._nodes:
@@ -434,23 +419,13 @@ class Network(object):
                 char = lns[0]
                 if nds == char:
                     self._node2line.setdefault(nds, []).append(lns)
-            # node2line.setdefault(nds, []).append(self._node2line[nds])
-        # print(node2line)
         for lns in self._lines:
-            # char1 = lns[0]
             char2 = lns[1]
             for nds in self._nodes:
-                # if nds == char1:
-                # n1 = nds
-                # self._line2node.setdefault(lns, []).insert(0, n1)
-                # if nds == char2:
-                # n2 = nds
-                # self._line2node.setdefault(lns, []).insert(1, n2)
                 if nds == char2:
                     n = nds
                     self._line2node.setdefault(lns, []).append(n)
             line2node.setdefault(lns, []).append(self._line2node[lns])
-        #print('Connection: \n', line2node)
         pass
 
     # propagate signal_information through path specified in it
